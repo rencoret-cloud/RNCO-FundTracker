@@ -5,7 +5,7 @@
       "symbol": "FFMM-BANCHILE-8023-V"
     }
   },
-  "__generatedAt": "2026-06-22T04:40:08.538Z",
+  "__generatedAt": "2026-06-22T04:43:44.446Z",
   "banchile-horizonte": {
     "series": [
       {
@@ -3689,7 +3689,7 @@
         "value": 1705.252
       }
     ],
-    "lastUpdated": "2026-06-22T04:40:11.601Z",
+    "lastUpdated": "2026-06-22T04:43:45.090Z",
     "source": "fintual/cmf"
   }
 }
