@@ -103,6 +103,19 @@ async function main() {
   const mappingsCache = existing.__mappings || {};
   const out = { __mappings: mappingsCache, __generatedAt: new Date().toISOString() };
 
+  // DIAGNÓSTICO TEMPORAL: lista todas las administradoras disponibles en Fintual
+  // para poder ajustar managerHint con el nombre exacto. Quitar una vez resuelto.
+  try {
+    const providers = await fetchJson(`${API_BASE}/asset_providers`);
+    console.log("=== Administradoras disponibles en Fintual ===");
+    for (const p of providers.data) {
+      console.log(`[${p.id}] ${p.attributes.name}`);
+    }
+    console.log("=== Fin lista administradoras ===");
+  } catch (err) {
+    console.error("No se pudo listar administradoras:", err.message);
+  }
+
   for (const [fundId, source] of Object.entries(FUND_SOURCES)) {
     try {
       const realAssetId = await resolveRealAssetId(source, mappingsCache, fundId);
