@@ -71,7 +71,12 @@ async function resolveRealAssetId(source, cacheMap, fundId) {
   const fund = conceptualAssets.data.find((a) =>
     normalize(a.attributes.name).includes(normalize(source.nameHint))
   );
-  if (!fund) throw new Error(`No se encontró fondo "${source.nameHint}" en ${source.managerHint}`);
+  if (!fund) {
+    const available = conceptualAssets.data.map((a) => a.attributes.name).join(" | ");
+    throw new Error(
+      `No se encontró fondo "${source.nameHint}" en ${source.managerHint}. Disponibles: ${available}`
+    );
+  }
 
   const realAssets = await fetchJson(`${API_BASE}/conceptual_assets/${fund.id}/real_assets`);
   let serie = realAssets.data.find((r) =>
