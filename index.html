@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="es-CL">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Renco FundTracker</title>
+<meta name="description" content="Panel de seguimiento de fondos mutuos — Renco FundTracker" />
+
+<!-- PWA / installable app config -->
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#11151b" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Renco FundTracker" />
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+<link rel="icon" href="icons/icon-192.png" />
+
+<style>
+  html, body { margin: 0; background: #11151b; }
+  #root { min-height: 100vh; }
+  #boot-loading { color: #6b7684; font-family: -apple-system, sans-serif; padding: 40px; text-align: center; }
+</style>
+
+<!-- Import map: load React, ReactDOM, Recharts and lucide-react straight from a CDN, no build step needed -->
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@18.3.1",
+    "react/jsx-runtime": "https://esm.sh/react@18.3.1/jsx-runtime",
+    "react-dom": "https://esm.sh/react-dom@18.3.1",
+    "react-dom/client": "https://esm.sh/react-dom@18.3.1/client",
+    "recharts": "https://esm.sh/recharts@2.12.7?external=react,react-dom",
+    "lucide-react": "https://esm.sh/lucide-react@0.383.0?external=react,react-dom"
+  }
+}
+</script>
+
+<!-- Babel Standalone transpiles the JSX in app.jsx directly in the browser -->
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+  <div id="root"><div id="boot-loading">Cargando Renco FundTracker…</div></div>
+
+  <script type="text/babel" data-type="module" data-presets="react" src="app.jsx"></script>
+
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("sw.js").catch(() => {});
+      });
+    }
+  </script>
+</body>
+</html>
