@@ -1,5 +1,5 @@
 /**
- * BR FundTracker — data update script
+ * Renco FundTracker — data update script
  * -------------------------------------------------------------------------
  * Pulls daily valor-cuota history for Chilean, CMF-regulated mutual funds
  * from Fintual's public REST API (https://fintual.cl/api), which mirrors
@@ -7,10 +7,16 @@
  * data/funds.json, which the static front-end reads directly — no backend,
  * no Firebase, no Blaze. Run by the GitHub Actions workflow once a day.
  *
- * Coverage limits: only Chilean CMF-regulated funds show up here.
- * International / private-banking funds (BFG, JPM Global Income, Santander
- * Private Banking Global, GO Acciones Globales ESG) are not CMF-regulated
- * Chilean funds and are skipped — they stay on sample data for now.
+ * Providers are pinned by exact Fintual asset_provider id rather than fuzzy
+ * name matching — several banks have multiple entities in Fintual's catalog
+ * (the AGF that runs mutual funds, plus separate bond-issuer / broker /
+ * insurance entities with the same brand name), and a fuzzy match can lock
+ * onto the wrong one silently. Run the script with DEBUG_PROVIDERS=1 to
+ * print the full provider list again if a manager's id ever needs updating.
+ *
+ * Coverage limits: funds not domiciled/registered as Chilean CMF mutual
+ * funds (BFG Global Dynamic, JPM Global Income — both Luxembourg-domiciled,
+ * sold via private banking) have no public API and stay on sample data.
  * -------------------------------------------------------------------------
  */
 import { writeFile, readFile } from "fs/promises";
@@ -18,25 +24,33 @@ import { writeFile, readFile } from "fs/promises";
 const API_BASE = "https://fintual.cl/api";
 const DATA_PATH = new URL("../data/funds.json", import.meta.url);
 
-const FUND_SOURCES = {
-  "lv-agresiva": { managerHint: "LARRAIN VIAL", nameHint: "CUENTA ACTIVA AGRESIVA", serieHint: "A" },
-  "lv-moderada": { managerHint: "LARRAIN VIAL", nameHint: "CUENTA ACTIVA MODERADA", serieHint: "A" },
-  "lv-conservadora": { managerHint: "LARRAIN VIAL", nameHint: "CUENTA ACTIVA CONSERVADORA", serieHint: "A" },
-  "lv-ahorro-capital-a": { managerHint: "LARRAIN VIAL", nameHint: "AHORRO CAPITAL", serieHint: "A" },
-  "itau-dinamico": { managerHint: "ITAU", nameHint: "DINAMICO", serieHint: "" },
-  "itau-gestionado-agresivo-f1": { managerHint: "ITAU", nameHint: "GESTIONADO AGRESIVO", serieHint: "F1" },
-  "banchile-horizonte": { managerHint: "BANCHILE", nameHint: "HORIZONTE", serieHint: "L" },
-  // Confirmed CMF-regulated (RUN 8908-7) — despite being a "private banking" label,
-  // this is a Chilean mutual fund and should be resolvable via Fintual/CMF data.
-  "santander-pb-agresivo": { managerHint: "SANTANDER", nameHint: "PRIVATE BANKING AGRESIVO", serieHint: "GLOBAL" },
-  // Confirmed CMF-regulated (RUN 8090-K).
-  "santander-go-ejecutiva": { managerHint: "SANTANDER", nameHint: "GO ACCIONES GLOBALES", serieHint: "EJECU" },
-  "santander-go-inversionista": { managerHint: "SANTANDER", nameHint: "GO ACCIONES GLOBALES", serieHint: "INVERSIONISTA" },
+// Exact Fintual asset_provider ids (confirmed from a live /asset_providers dump).
+const PROVIDERS = {
+  LARRAINVIAL: 39, // "LARRAIN VIAL ACTIVOS S.A. ADMINISTRADORA GENERAL DE FONDOS"
+  ITAU: 14,        // "ITAU ADMINISTRADORA GENERAL DE FONDOS S.A."
+  SANTANDER: 17,   // "SANTANDER ASSET MANAGEMENT S.A. ADMINISTRADORA GENERAL DE FONDOS"
+  BANCHILE: 3,      // "BANCHILE ADMINISTRADORA GENERAL DE FONDOS S.A."
 };
 
-// Genuinely not CMF-regulated Chilean funds (Luxembourg-domiciled, sold via
-// private banking) — no free public data source found. Left on sample data
-// until a manual-entry flow or a paid data source (Morningstar/Bloomberg) is set up.
+const FUND_SOURCES = {
+  "lv-agresiva": { providerId: PROVIDERS.LARRAINVIAL, nameHint: "CUENTA ACTIVA AGRESIVA", serieHint: "A" },
+  "lv-moderada": { providerId: PROVIDERS.LARRAINVIAL, nameHint: "CUENTA ACTIVA MODERADA", serieHint: "A" },
+  "lv-conservadora": { providerId: PROVIDERS.LARRAINVIAL, nameHint: "CUENTA ACTIVA CONSERVADORA", serieHint: "A" },
+  "lv-ahorro-capital-a": { providerId: PROVIDERS.LARRAINVIAL, nameHint: "AHORRO CAPITAL", serieHint: "A" },
+  "itau-dinamico": { providerId: PROVIDERS.ITAU, nameHint: "DINAMICO", serieHint: "" },
+  "itau-gestionado-agresivo-f1": { providerId: PROVIDERS.ITAU, nameHint: "GESTIONADO AGRESIVO", serieHint: "F1" },
+  "banchile-horizonte": { providerId: PROVIDERS.BANCHILE, nameHint: "HORIZONTE", serieHint: "L" },
+  // Confirmed CMF-regulated (RUN 8908-7) — a Chilean mutual fund despite the
+  // "private banking" label.
+  "santander-pb-agresivo": { providerId: PROVIDERS.SANTANDER, nameHint: "PRIVATE BANKING AGRESIVO", serieHint: "GLOBAL" },
+  // Confirmed CMF-regulated (RUN 8090-K).
+  "santander-go-ejecutiva": { providerId: PROVIDERS.SANTANDER, nameHint: "GO ACCIONES GLOBALES", serieHint: "EJECU" },
+  "santander-go-inversionista": { providerId: PROVIDERS.SANTANDER, nameHint: "GO ACCIONES GLOBALES", serieHint: "INVERSIONISTA" },
+};
+
+// Genuinely not CMF-regulated Chilean funds — no free public data source
+// found. Left on sample data until a manual-entry flow or a paid data
+// source (Morningstar/Bloomberg) is set up.
 const MANUAL_ONLY_FUND_IDS = [
   "bfg-global-dynamic",
   "jpm-global-income",
@@ -61,20 +75,14 @@ function normalize(str) {
 async function resolveRealAssetId(source, cacheMap, fundId) {
   if (cacheMap[fundId]?.realAssetId) return cacheMap[fundId].realAssetId;
 
-  const providers = await fetchJson(`${API_BASE}/asset_providers`);
-  const provider = providers.data.find((p) =>
-    normalize(p.attributes.name).includes(normalize(source.managerHint))
-  );
-  if (!provider) throw new Error(`No se encontró administradora para "${source.managerHint}"`);
-
-  const conceptualAssets = await fetchJson(`${API_BASE}/asset_providers/${provider.id}/conceptual_assets`);
+  const conceptualAssets = await fetchJson(`${API_BASE}/asset_providers/${source.providerId}/conceptual_assets`);
   const fund = conceptualAssets.data.find((a) =>
     normalize(a.attributes.name).includes(normalize(source.nameHint))
   );
   if (!fund) {
     const available = conceptualAssets.data.map((a) => a.attributes.name).join(" | ");
     throw new Error(
-      `No se encontró fondo "${source.nameHint}" en ${source.managerHint}. Disponibles: ${available}`
+      `No se encontró fondo "${source.nameHint}" en proveedor ${source.providerId}. Disponibles: ${available}`
     );
   }
 
@@ -98,23 +106,24 @@ async function loadExisting() {
   }
 }
 
+async function maybeLogProviders() {
+  if (!process.env.DEBUG_PROVIDERS) return;
+  try {
+    const providers = await fetchJson(`${API_BASE}/asset_providers`);
+    console.log("=== Administradoras disponibles en Fintual ===");
+    for (const p of providers.data) console.log(`[${p.id}] ${p.attributes.name}`);
+    console.log("=== Fin lista administradoras ===");
+  } catch (err) {
+    console.error("No se pudo listar administradoras:", err.message);
+  }
+}
+
 async function main() {
   const existing = await loadExisting();
   const mappingsCache = existing.__mappings || {};
   const out = { __mappings: mappingsCache, __generatedAt: new Date().toISOString() };
 
-  // DIAGNÓSTICO TEMPORAL: lista todas las administradoras disponibles en Fintual
-  // para poder ajustar managerHint con el nombre exacto. Quitar una vez resuelto.
-  try {
-    const providers = await fetchJson(`${API_BASE}/asset_providers`);
-    console.log("=== Administradoras disponibles en Fintual ===");
-    for (const p of providers.data) {
-      console.log(`[${p.id}] ${p.attributes.name}`);
-    }
-    console.log("=== Fin lista administradoras ===");
-  } catch (err) {
-    console.error("No se pudo listar administradoras:", err.message);
-  }
+  await maybeLogProviders();
 
   for (const [fundId, source] of Object.entries(FUND_SOURCES)) {
     try {
