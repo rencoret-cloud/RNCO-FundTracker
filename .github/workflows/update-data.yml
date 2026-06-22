@@ -22,6 +22,8 @@ jobs:
           node-version: "20"
 
       - name: Ejecutar script de actualización
+        env:
+          DEBUG_PROVIDERS: "1"
         run: node scripts/update-data.mjs
 
       - name: Confirmar y subir cambios (si hay)
