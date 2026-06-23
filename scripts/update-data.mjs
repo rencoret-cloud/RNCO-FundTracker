@@ -73,9 +73,7 @@ function normalize(str) {
     .trim();
 }
 
-async function resolveRealAssetId(source, cacheMap, fundId) {
-  if (!process.env.DEBUG_PROVIDERS && cacheMap[fundId]?.realAssetId) return cacheMap[fundId].realAssetId;
-
+async function resolveCandidateSeries(source, fundId) {
   const conceptualAssets = await fetchJson(`${API_BASE}/asset_providers/${source.providerId}/conceptual_assets`);
   const fund = conceptualAssets.data.find((a) =>
     normalize(a.attributes.name).includes(normalize(source.nameHint))
@@ -88,21 +86,27 @@ async function resolveRealAssetId(source, cacheMap, fundId) {
   }
 
   const realAssets = await fetchJson(`${API_BASE}/conceptual_assets/${fund.id}/real_assets`);
+  if (!realAssets.data.length) throw new Error(`Sin series disponibles para "${source.nameHint}"`);
+
   const wantSerie = (source.serieHint || "").toUpperCase();
-  let serie = realAssets.data.find((r) => {
+  const matchesHint = (r) => {
     const parts = r.attributes.symbol.toUpperCase().split("-");
-    return parts[parts.length - 1] === wantSerie;
-  });
-  if (!serie) serie = realAssets.data[0];
-  if (!serie) throw new Error(`Sin series disponibles para "${source.nameHint}"`);
+    return parts.slice(3).join("-") === wantSerie;
+  };
+  // Try the hinted serie first, then fall back to every other serie of the
+  // same fund (some series are registered in CMF/Fintual but have no NAV
+  // history loaded — trying them in order finds one that actually has data).
+  const ordered = [
+    ...realAssets.data.filter(matchesHint),
+    ...realAssets.data.filter((r) => !matchesHint(r)),
+  ];
 
   if (process.env.DEBUG_PROVIDERS) {
     const allSymbols = realAssets.data.map((r) => r.attributes.symbol).join(", ");
-    console.log(`   ↳ ${fundId}: fondo="${fund.attributes.name}" serieElegida="${serie.attributes.symbol}" disponibles=[${allSymbols}]`);
+    console.log(`   ↳ ${fundId}: fondo="${fund.attributes.name}" orden=[${ordered.map((r) => r.attributes.symbol).join(", ")}] disponibles=[${allSymbols}]`);
   }
 
-  cacheMap[fundId] = { realAssetId: serie.id, symbol: serie.attributes.symbol };
-  return serie.id;
+  return ordered;
 }
 
 async function loadExisting() {
@@ -126,6 +130,16 @@ async function maybeLogProviders() {
   }
 }
 
+async function fetchDays(realAssetId, fromDate, toDate) {
+  if (fromDate > toDate) return [];
+  const daysResp = await fetchJson(
+    `${API_BASE}/real_assets/${realAssetId}/days?from_date=${fromDate}&to_date=${toDate}`
+  );
+  return (daysResp.data || [])
+    .map((d) => ({ date: d.attributes.date, value: d.attributes.price }))
+    .filter((p) => p.date && typeof p.value === "number");
+}
+
 async function main() {
   const existing = await loadExisting();
   const mappingsCache = existing.__mappings || {};
@@ -135,7 +149,6 @@ async function main() {
 
   for (const [fundId, source] of Object.entries(FUND_SOURCES)) {
     try {
-      const realAssetId = await resolveRealAssetId(source, mappingsCache, fundId);
       const prevSeries = existing[fundId]?.series || [];
       const lastDate = prevSeries.length ? prevSeries[prevSeries.length - 1].date : null;
       const fromDate = lastDate
@@ -143,14 +156,32 @@ async function main() {
         : new Date(Date.now() - 3 * 365 * 86400000).toISOString().slice(0, 10);
       const toDate = new Date().toISOString().slice(0, 10);
 
+      // Reuse a previously-confirmed-working serie if we have one and we're
+      // not in debug/re-discovery mode, instead of re-resolving every run.
       let newPoints = [];
-      if (fromDate <= toDate) {
-        const daysResp = await fetchJson(
-          `${API_BASE}/real_assets/${realAssetId}/days?from_date=${fromDate}&to_date=${toDate}`
-        );
-        newPoints = (daysResp.data || [])
-          .map((d) => ({ date: d.attributes.date, value: d.attributes.price }))
-          .filter((p) => p.date && typeof p.value === "number");
+      let usedSymbol = mappingsCache[fundId]?.symbol;
+      if (!process.env.DEBUG_PROVIDERS && mappingsCache[fundId]?.realAssetId) {
+        newPoints = await fetchDays(mappingsCache[fundId].realAssetId, fromDate, toDate);
+      } else {
+        const candidates = await resolveCandidateSeries(source, fundId);
+        for (const candidate of candidates) {
+          const points = await fetchDays(candidate.id, fromDate, toDate);
+          // Accept this serie if it has new points, OR if we already have
+          // prior history under it (so "up to date, 0 new" isn't mistaken
+          // for "this serie has no data" on a later run).
+          if (points.length > 0 || lastDate) {
+            newPoints = points;
+            usedSymbol = candidate.attributes.symbol;
+            mappingsCache[fundId] = { realAssetId: candidate.id, symbol: candidate.attributes.symbol };
+            break;
+          }
+        }
+        if (!usedSymbol && candidates.length) {
+          // Nothing had data on a first-ever run — keep the hinted/first
+          // candidate on record so the log explains what was tried.
+          usedSymbol = candidates[0].attributes.symbol;
+          mappingsCache[fundId] = { realAssetId: candidates[0].id, symbol: candidates[0].attributes.symbol };
+        }
       }
 
       const merged = [...prevSeries, ...newPoints].reduce((acc, p) => {
@@ -159,13 +190,14 @@ async function main() {
       }, {});
       const series = Object.values(merged).sort((a, b) => (a.date > b.date ? 1 : -1));
 
-      out[fundId] = { series, lastUpdated: new Date().toISOString(), source: "fintual/cmf" };
-      console.log(`✓ ${fundId}: +${newPoints.length} puntos nuevos (total ${series.length})`);
+      out[fundId] = { series, lastUpdated: new Date().toISOString(), source: "fintual/cmf", symbol: usedSymbol };
+      console.log(`✓ ${fundId}: +${newPoints.length} puntos nuevos (total ${series.length}) [serie ${usedSymbol}]`);
     } catch (err) {
       console.error(`✗ ${fundId}: ${err.message}`);
       if (existing[fundId]) out[fundId] = existing[fundId]; // keep last good data
     }
   }
+
 
   for (const fundId of MANUAL_ONLY_FUND_IDS) {
     if (existing[fundId]) out[fundId] = existing[fundId];
