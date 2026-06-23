@@ -37,15 +37,16 @@ const FUND_SOURCES = {
   "lv-moderada": { providerId: PROVIDERS.LARRAINVIAL, nameHint: "CUENTA ACTIVA MODERADA", serieHint: "A" },
   "lv-conservadora": { providerId: PROVIDERS.LARRAINVIAL, nameHint: "CUENTA ACTIVA CONSERVADORA", serieHint: "A" },
   "lv-ahorro-capital-a": { providerId: PROVIDERS.LARRAINVIAL, nameHint: "AHORRO CAPITAL", serieHint: "A" },
-  "itau-dinamico": { providerId: PROVIDERS.ITAU, nameHint: "DINAMICO", serieHint: "" },
-  "itau-gestionado-agresivo-f1": { providerId: PROVIDERS.ITAU, nameHint: "GESTIONADO AGRESIVO", serieHint: "F1" },
+  "itau-dinamico": { providerId: PROVIDERS.ITAU, nameHint: "DINAMICO", serieHint: "A" },
+  // OJO: este fondo (id 8925) solo tiene series A / B / G en Fintual — no existe
+  // una serie "F1" para él. Revisar con el banco si "F1" es en realidad otro
+  // fondo CMF distinto ("Itaú Gestionado Agresivo F1" como fondo propio, no
+  // como serie). Por ahora usa la serie A como mejor aproximación.
+  "itau-gestionado-agresivo-f1": { providerId: PROVIDERS.ITAU, nameHint: "GESTIONADO AGRESIVO", serieHint: "A" },
   "banchile-horizonte": { providerId: PROVIDERS.BANCHILE, nameHint: "HORIZONTE", serieHint: "L" },
-  // Confirmed CMF-regulated (RUN 8908-7) — a Chilean mutual fund despite the
-  // "private banking" label.
   "santander-pb-agresivo": { providerId: PROVIDERS.SANTANDER, nameHint: "PRIVATE BANKING AGRESIVO", serieHint: "GLOBAL" },
-  // Confirmed CMF-regulated (RUN 8090-K).
   "santander-go-ejecutiva": { providerId: PROVIDERS.SANTANDER, nameHint: "GO ACCIONES GLOBALES", serieHint: "EJECU" },
-  "santander-go-inversionista": { providerId: PROVIDERS.SANTANDER, nameHint: "GO ACCIONES GLOBALES", serieHint: "INVERSIONISTA" },
+  "santander-go-inversionista": { providerId: PROVIDERS.SANTANDER, nameHint: "GO ACCIONES GLOBALES", serieHint: "INVER" },
 };
 
 // Genuinely not CMF-regulated Chilean funds — no free public data source
@@ -87,9 +88,11 @@ async function resolveRealAssetId(source, cacheMap, fundId) {
   }
 
   const realAssets = await fetchJson(`${API_BASE}/conceptual_assets/${fund.id}/real_assets`);
-  let serie = realAssets.data.find((r) =>
-    normalize(r.attributes.symbol).endsWith(`-${normalize(source.serieHint)}`)
-  );
+  const wantSerie = (source.serieHint || "").toUpperCase();
+  let serie = realAssets.data.find((r) => {
+    const parts = r.attributes.symbol.toUpperCase().split("-");
+    return parts[parts.length - 1] === wantSerie;
+  });
   if (!serie) serie = realAssets.data[0];
   if (!serie) throw new Error(`Sin series disponibles para "${source.nameHint}"`);
 
