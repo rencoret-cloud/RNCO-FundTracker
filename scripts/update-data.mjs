@@ -56,8 +56,14 @@ const FUND_SOURCES = {
   "lv-agresiva-q": { providerId: PROVIDERS.LARRAINVIAL, nameHint: "CUENTA ACTIVA AGRESIVA", nameExclude: "DOLAR", serieHint: "Q" },
   "lv-conservadora-q": { providerId: PROVIDERS.LARRAINVIAL, nameHint: "CUENTA ACTIVA CONSERVADORA", nameExclude: "DOLAR", serieHint: "Q" },
   "lv-ahorro-capital-f": { providerId: PROVIDERS.LARRAINVIAL, nameHint: "AHORRO CAPITAL", serieHint: "F" },
-  // Itaú "Gestionado" family — names/series guessed; if these don't resolve,
-  // the error log will list every Itaú fund name available so we can correct them.
+  // Itaú "Gestionado" family (Moderado/Conservador/Agresivo): CONFIRMADO en la
+  // ficha pública de la CMF (RUN 8993-1, pestaña "Series de Cuotas") que las
+  // series A/B/G de este fondo cerraron el 14/01/2017, y F1 es la
+  // "continuadora" oficial de la Serie A (F2←G, F3←F, F4←I, F5←U). Es decir,
+  // F1 SÍ es una serie real y vigente — el problema es que Fintual solo tiene
+  // cargadas las series viejas y cerradas (A/B/G, con NAV congelado en 2017),
+  // no las vigentes (F1-F5/APV2/IT/S/S2). Es un vacío de datos de la fuente,
+  // no de mapeo. Mismo patrón muy probable en Moderado/Conservador.
   "itau-gestionado-moderado-f3": { providerId: PROVIDERS.ITAU, nameHint: "GESTIONADO MODERADO", serieHint: "F3" },
   "itau-gestionado-moderado-f1": { providerId: PROVIDERS.ITAU, nameHint: "GESTIONADO MODERADO", serieHint: "F1" },
   "itau-gestionado-conservador-f1": { providerId: PROVIDERS.ITAU, nameHint: "GESTIONADO CONSERVADOR", serieHint: "F1" },

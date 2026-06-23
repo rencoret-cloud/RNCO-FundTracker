@@ -44,10 +44,10 @@ const FUND_DEFS = [
   { id: "banchile-horizonte", name: "Horizonte", manager: "Banchile", serie: "L", seed: 12, drift: 0.00024, vol: 0.0045, risk: 3, live: true },
   { id: "santander-go-inversionista", name: "GO Acciones Globales ESG", manager: "Santander", serie: "Inversionista", seed: 67, drift: 0.00028, vol: 0.0061, risk: 5, live: true },
   // ---- Nuevos solicitados ----
-  { id: "santander-renta-largo-plazo", name: "Renta Largo Plazo", manager: "Santander", serie: "Universal", seed: 91, drift: 0.00015, vol: 0.0022, risk: 2, live: false },
-  { id: "lv-agresiva-q", name: "Cuenta Activa Agresiva", manager: "LarrainVial", serie: "Q", seed: 43, drift: 0.00035, vol: 0.0060, risk: 5, live: false },
-  { id: "lv-conservadora-q", name: "Cuenta Activa Conservadora", manager: "LarrainVial", serie: "Q", seed: 10, drift: 0.00014, vol: 0.0018, risk: 2, live: false },
-  { id: "lv-ahorro-capital-f", name: "Ahorro Capital", manager: "LarrainVial", serie: "F", seed: 32, drift: 0.00010, vol: 0.0010, risk: 1, live: false },
+  { id: "santander-renta-largo-plazo", name: "Renta Largo Plazo", manager: "Santander", serie: "Universal", seed: 91, drift: 0.00015, vol: 0.0022, risk: 2, live: true },
+  { id: "lv-agresiva-q", name: "Cuenta Activa Agresiva", manager: "LarrainVial", serie: "Q", seed: 43, drift: 0.00035, vol: 0.0060, risk: 5, live: true },
+  { id: "lv-conservadora-q", name: "Cuenta Activa Conservadora", manager: "LarrainVial", serie: "Q", seed: 10, drift: 0.00014, vol: 0.0018, risk: 2, live: true },
+  { id: "lv-ahorro-capital-f", name: "Ahorro Capital", manager: "LarrainVial", serie: "F", seed: 32, drift: 0.00010, vol: 0.0010, risk: 1, live: true },
   { id: "itau-gestionado-moderado-f3", name: "Gestionado Moderado", manager: "Itaú", serie: "F3", seed: 51, drift: 0.00022, vol: 0.0040, risk: 3, live: false },
   { id: "itau-gestionado-moderado-f1", name: "Gestionado Moderado", manager: "Itaú", serie: "F1", seed: 52, drift: 0.00022, vol: 0.0040, risk: 3, live: false },
   { id: "itau-gestionado-conservador-f1", name: "Gestionado Conservador", manager: "Itaú", serie: "F1", seed: 53, drift: 0.00014, vol: 0.0018, risk: 2, live: false },
@@ -193,7 +193,9 @@ async function fetchEconIndicators() {
     { label: "IPC · mes", value: typeof main.ipc?.valor === "number" ? `${main.ipc.valor > 0 ? "+" : ""}${main.ipc.valor.toFixed(1)}%` : "—", asOf: fecha(main.ipc?.fecha) },
     { label: "IPC 12M", value: ipc12m !== null ? `${ipc12m > 0 ? "+" : ""}${ipc12m.toFixed(1)}%` : "—", asOf: "trailing 12m" },
     { label: "TPM", value: typeof main.tpm?.valor === "number" ? `${main.tpm.valor.toFixed(2)}%` : "—", asOf: fecha(main.tpm?.fecha) },
-    { label: "DAP 12M", value: "—", asOf: "no disponible vía API pública" },
+    // No hay una tasa "DAP 12M" oficial única (cada banco fija la suya) —
+    // se usa la TPM del Banco Central como aproximación de referencia.
+    { label: "DAP 12M*", value: typeof main.tpm?.valor === "number" ? `${main.tpm.valor.toFixed(2)}%` : "—", asOf: "aprox. = TPM" },
   ];
 }
 
@@ -204,7 +206,7 @@ const ECON_INDICATORS_FALLBACK = [
   { label: "IPC · mes", value: "—", asOf: "" },
   { label: "IPC 12M", value: "—", asOf: "" },
   { label: "TPM", value: "—", asOf: "" },
-  { label: "DAP 12M", value: "—", asOf: "no disponible vía API pública" },
+  { label: "DAP 12M*", value: "—", asOf: "aprox. = TPM" },
 ];
 
 function findValueOnOrBefore(series, targetDate) {
@@ -327,6 +329,21 @@ export default function FundTracker() {
     [FUNDS]
   );
 
+  const alerts = useMemo(() => {
+    const out = [];
+    fundsWithReturns.forEach((f) => {
+      const d1 = f.returns["1D"]?.pct;
+      const m1 = f.returns["1M"]?.pct;
+      if (typeof d1 === "number" && Math.abs(d1) >= 2) {
+        out.push({ key: `${f.id}-1D`, fundName: f.name, manager: f.manager, period: "1D", pct: d1 });
+      }
+      if (typeof m1 === "number" && Math.abs(m1) >= 5) {
+        out.push({ key: `${f.id}-1M`, fundName: f.name, manager: f.manager, period: "1M", pct: m1 });
+      }
+    });
+    return out;
+  }, [fundsWithReturns]);
+
   const groupedByManager = useMemo(() => {
     const order = [];
     const groups = {};
@@ -427,11 +444,11 @@ export default function FundTracker() {
         {/* Header with icon */}
         <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 16, animation: "fadeUp 0.45s ease both" }}>
           <div style={styles.logoMark}>
-            <img src="icons/icon-192.png" alt="Renco" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+            <img src="icons/icon-192.png" alt="RNCO" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
           </div>
           <div>
             <h1 style={styles.title}>
-              <span style={styles.logoBR}>Renco</span> <span style={styles.logoWord}>FundTracker</span>
+              <span style={styles.logoBR}>RNCO</span> <span style={styles.logoWord}>FundTracker</span>
             </h1>
             <div style={styles.subtitle}>
               {FUNDS.length} fondos · {fundsWithReturns.filter((f) => f.isLive).length} con datos en vivo (CMF)
@@ -451,10 +468,26 @@ export default function FundTracker() {
           ))}
         </div>
         <div style={styles.ribbonNote}>
-          {econStatus === "ok" && "Fuente: mindicador.cl (Banco Central de Chile). DAP 12M no tiene API pública, se deja manual."}
+          {econStatus === "ok" && "Fuente: mindicador.cl (Banco Central de Chile). *DAP 12M no tiene tasa única publicada — se usa la TPM como aproximación."}
           {econStatus === "loading" && "Cargando indicadores…"}
           {econStatus === "error" && "No se pudo conectar a mindicador.cl — mostrando valores vacíos."}
         </div>
+
+        {/* Alertas de variación: ±2% día vs. el día anterior, ±5% mes vs. hace 30 días */}
+        {alerts.length > 0 && (
+          <div style={styles.alertsBox} className="ft-card">
+            {alerts.map((a) => (
+              <div key={a.key} style={styles.alertRow}>
+                {a.pct > 0 ? <TrendingUp size={15} color="#6fcf97" /> : <TrendingDown size={15} color="#e07a5f" />}
+                <span style={styles.alertText}>
+                  <strong>{a.fundName}</strong> {a.pct > 0 ? "subió" : "bajó"}{" "}
+                  <strong style={{ color: a.pct > 0 ? "#6fcf97" : "#e07a5f" }}>{fmtPct(a.pct)}</strong>{" "}
+                  {a.period === "1D" ? "respecto al día anterior" : "en el último mes"}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Mode buttons */}
         <div style={styles.modeRow} className="ft-card">
@@ -809,14 +842,15 @@ function CompositionPanel({ composition, title, hideHoldings }) {
 }
 
 const styles = {
-  page: { minHeight: "100vh", background: "#11151b", color: "#e7e9ec", fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif", padding: "28px 16px 48px", boxSizing: "border-box" },
+  page: { minHeight: "100vh", background: "#11151b", color: "#e7e9ec", fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif", padding: "calc(env(safe-area-inset-top, 0px) + 20px) 16px calc(env(safe-area-inset-bottom, 0px) + 48px)", boxSizing: "border-box" },
   shell: { maxWidth: 860, margin: "0 auto" },
   iconBadge: { width: 42, height: 42, borderRadius: 12, background: "#d4a843", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 },
   logoMark: {
     width: 46,
     height: 46,
     borderRadius: 13,
-    background: "#ffffff",
+    background: "#0a0a0a",
+    border: "1px solid #232a33",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -826,11 +860,14 @@ const styles = {
   },
   logoBR: {
     fontFamily: "'Inter', -apple-system, sans-serif",
-    color: "#d8453c",
+    color: "#6fcf97",
     fontWeight: 800,
     letterSpacing: "-0.02em",
   },
   logoWord: { color: "#e7e9ec", fontWeight: 700 },
+  alertsBox: { display: "flex", flexDirection: "column", gap: 6, background: "#1a1410", border: "1px solid #3a2f1f", borderRadius: 12, padding: "10px 14px", marginBottom: 14 },
+  alertRow: { display: "flex", alignItems: "center", gap: 8, fontSize: 13 },
+  alertText: { color: "#dbe0e6" },
   headerRow: { display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 12, borderBottom: "1px solid #232a33", paddingBottom: 18, marginBottom: 18 },
   eyebrow: { fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: "#d4a843", fontWeight: 600, marginBottom: 6 },
   title: { fontSize: 24, fontWeight: 700, margin: 0, letterSpacing: "-0.01em" },
