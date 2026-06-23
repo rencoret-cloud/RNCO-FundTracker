@@ -183,6 +183,11 @@ async function fetchEconIndicators() {
   const ipc12m = last12.length === 12
     ? (last12.reduce((acc, p) => acc * (1 + p.valor / 100), 1) - 1) * 100
     : null;
+  // El snapshot principal (main.ipc) puede quedar pegado en un valor viejo si
+  // mindicador.cl tiene un problema de caché/actualización en ese endpoint en
+  // particular. La serie histórica mensual (combined) se actualiza por separado,
+  // así que se usa el último punto de ahí en vez de main.ipc.
+  const lastIpcPoint = combined.length ? combined[combined.length - 1] : null;
 
   const fecha = (d) => new Date(d).toLocaleDateString("es-CL", { day: "2-digit", month: "short", year: "numeric" });
 
@@ -190,7 +195,7 @@ async function fetchEconIndicators() {
     { label: "UF · hoy", value: `$${fmtCLP(main.uf?.valor)}`, asOf: fecha(main.uf?.fecha) },
     { label: "UTM · mes", value: `$${fmtCLP(main.utm?.valor, 0)}`, asOf: fecha(main.utm?.fecha) },
     { label: "USD/CLP", value: `$${fmtCLP(main.dolar?.valor)}`, asOf: fecha(main.dolar?.fecha) },
-    { label: "IPC · mes", value: typeof main.ipc?.valor === "number" ? `${main.ipc.valor > 0 ? "+" : ""}${main.ipc.valor.toFixed(1)}%` : "—", asOf: fecha(main.ipc?.fecha) },
+    { label: "IPC · mes", value: typeof lastIpcPoint?.valor === "number" ? `${lastIpcPoint.valor > 0 ? "+" : ""}${lastIpcPoint.valor.toFixed(1)}%` : "—", asOf: lastIpcPoint ? fecha(lastIpcPoint.fecha) : "—" },
     { label: "IPC 12M", value: ipc12m !== null ? `${ipc12m > 0 ? "+" : ""}${ipc12m.toFixed(1)}%` : "—", asOf: "trailing 12m" },
     { label: "TPM", value: typeof main.tpm?.valor === "number" ? `${main.tpm.valor.toFixed(2)}%` : "—", asOf: fecha(main.tpm?.fecha) },
     // No hay una tasa "DAP 12M" oficial única (cada banco fija la suya) —
