@@ -47,6 +47,22 @@ const FUND_SOURCES = {
   "santander-pb-agresivo": { providerId: PROVIDERS.SANTANDER, nameHint: "PRIVATE BANKING AGRESIVO", serieHint: "GLOBAL" },
   "santander-go-ejecutiva": { providerId: PROVIDERS.SANTANDER, nameHint: "GO ACCIONES GLOBALES", serieHint: "EJECU" },
   "santander-go-inversionista": { providerId: PROVIDERS.SANTANDER, nameHint: "GO ACCIONES GLOBALES", serieHint: "INVER" },
+
+  // ---- Nuevos solicitados ----
+  "santander-renta-largo-plazo": { providerId: PROVIDERS.SANTANDER, nameHint: "RENTA LARGO PLAZO", serieHint: "UNIVERSAL" },
+  // Peso-denominated twin of the dollar fund used for lv-agresiva/lv-conservadora —
+  // same nameHint substring matches both; nameExclude skips the "DÓLAR" one so
+  // this resolves to the CLP fund instead.
+  "lv-agresiva-q": { providerId: PROVIDERS.LARRAINVIAL, nameHint: "CUENTA ACTIVA AGRESIVA", nameExclude: "DOLAR", serieHint: "Q" },
+  "lv-conservadora-q": { providerId: PROVIDERS.LARRAINVIAL, nameHint: "CUENTA ACTIVA CONSERVADORA", nameExclude: "DOLAR", serieHint: "Q" },
+  "lv-ahorro-capital-f": { providerId: PROVIDERS.LARRAINVIAL, nameHint: "AHORRO CAPITAL", serieHint: "F" },
+  // Itaú "Gestionado" family — names/series guessed; if these don't resolve,
+  // the error log will list every Itaú fund name available so we can correct them.
+  "itau-gestionado-moderado-f3": { providerId: PROVIDERS.ITAU, nameHint: "GESTIONADO MODERADO", serieHint: "F3" },
+  "itau-gestionado-moderado-f1": { providerId: PROVIDERS.ITAU, nameHint: "GESTIONADO MODERADO", serieHint: "F1" },
+  "itau-gestionado-conservador-f1": { providerId: PROVIDERS.ITAU, nameHint: "GESTIONADO CONSERVADOR", serieHint: "F1" },
+  "itau-gestionado-agresivo-f2": { providerId: PROVIDERS.ITAU, nameHint: "GESTIONADO AGRESIVO", serieHint: "F2" },
+  "itau-gestionado-conservador-f2": { providerId: PROVIDERS.ITAU, nameHint: "GESTIONADO CONSERVADOR", serieHint: "F2" },
 };
 
 // Genuinely not CMF-regulated Chilean funds — no free public data source
@@ -55,6 +71,8 @@ const FUND_SOURCES = {
 const MANUAL_ONLY_FUND_IDS = [
   "bfg-global-dynamic",
   "jpm-global-income",
+  "bfg-fixed-income-global-a",
+  "bfg-fixed-income-global-c",
 ];
 
 async function fetchJson(url) {
@@ -75,9 +93,12 @@ function normalize(str) {
 
 async function resolveCandidateSeries(source, fundId) {
   const conceptualAssets = await fetchJson(`${API_BASE}/asset_providers/${source.providerId}/conceptual_assets`);
-  const fund = conceptualAssets.data.find((a) =>
-    normalize(a.attributes.name).includes(normalize(source.nameHint))
-  );
+  const fund = conceptualAssets.data.find((a) => {
+    const n = normalize(a.attributes.name);
+    if (!n.includes(normalize(source.nameHint))) return false;
+    if (source.nameExclude && n.includes(normalize(source.nameExclude))) return false;
+    return true;
+  });
   if (!fund) {
     const available = conceptualAssets.data.map((a) => a.attributes.name).join(" | ");
     throw new Error(

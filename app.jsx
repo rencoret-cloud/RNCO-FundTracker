@@ -32,17 +32,29 @@ async function fetchLiveData() {
 // ---------------------------------------------------------------------------
 const FUND_DEFS = [
   { id: "lv-agresiva", name: "Cuenta Activa Agresiva", manager: "LarrainVial", serie: "A", seed: 42, drift: 0.00035, vol: 0.0060, risk: 5, live: true },
-  { id: "santander-pb-agresivo", name: "Private Banking Agresivo (Global)", manager: "Santander", serie: "—", seed: 17, drift: 0.00032, vol: 0.0065, risk: 5, live: false },
+  { id: "santander-pb-agresivo", name: "Private Banking Agresivo (Global)", manager: "Santander", serie: "—", seed: 17, drift: 0.00032, vol: 0.0065, risk: 5, live: true },
   { id: "bfg-global-dynamic", name: "Global Dynamic Equity Fund", manager: "BFG", serie: "C", seed: 88, drift: 0.00030, vol: 0.0070, risk: 5, live: false },
   { id: "lv-moderada", name: "Cuenta Activa Moderada", manager: "LarrainVial", serie: "A", seed: 5, drift: 0.00022, vol: 0.0040, risk: 3, live: true },
   { id: "jpm-global-income", name: "Global Income", manager: "JPMorgan", serie: "A", seed: 61, drift: 0.00018, vol: 0.0030, risk: 2, live: false },
   { id: "itau-dinamico", name: "Dinámico", manager: "Itaú", serie: "Simple", seed: 23, drift: 0.00026, vol: 0.0050, risk: 3, live: true },
   { id: "lv-conservadora", name: "Cuenta Activa Conservadora", manager: "LarrainVial", serie: "A", seed: 9, drift: 0.00014, vol: 0.0018, risk: 2, live: true },
   { id: "lv-ahorro-capital-a", name: "Ahorro Capital", manager: "LarrainVial", serie: "A", seed: 31, drift: 0.00010, vol: 0.0010, risk: 1, live: true },
-  { id: "santander-go-ejecutiva", name: "GO Acciones Globales ESG", manager: "Santander", serie: "Ejecutiva", seed: 74, drift: 0.00029, vol: 0.0062, risk: 5, live: false },
+  { id: "santander-go-ejecutiva", name: "GO Acciones Globales ESG", manager: "Santander", serie: "Ejecutiva", seed: 74, drift: 0.00029, vol: 0.0062, risk: 5, live: true },
   { id: "itau-gestionado-agresivo-f1", name: "Gestionado Agresivo", manager: "Itaú", serie: "F1", seed: 50, drift: 0.00033, vol: 0.0068, risk: 5, live: true },
   { id: "banchile-horizonte", name: "Horizonte", manager: "Banchile", serie: "L", seed: 12, drift: 0.00024, vol: 0.0045, risk: 3, live: true },
-  { id: "santander-go-inversionista", name: "GO Acciones Globales ESG", manager: "Santander", serie: "Inversionista", seed: 67, drift: 0.00028, vol: 0.0061, risk: 5, live: false },
+  { id: "santander-go-inversionista", name: "GO Acciones Globales ESG", manager: "Santander", serie: "Inversionista", seed: 67, drift: 0.00028, vol: 0.0061, risk: 5, live: true },
+  // ---- Nuevos solicitados ----
+  { id: "santander-renta-largo-plazo", name: "Renta Largo Plazo", manager: "Santander", serie: "Universal", seed: 91, drift: 0.00015, vol: 0.0022, risk: 2, live: false },
+  { id: "lv-agresiva-q", name: "Cuenta Activa Agresiva", manager: "LarrainVial", serie: "Q", seed: 43, drift: 0.00035, vol: 0.0060, risk: 5, live: false },
+  { id: "lv-conservadora-q", name: "Cuenta Activa Conservadora", manager: "LarrainVial", serie: "Q", seed: 10, drift: 0.00014, vol: 0.0018, risk: 2, live: false },
+  { id: "lv-ahorro-capital-f", name: "Ahorro Capital", manager: "LarrainVial", serie: "F", seed: 32, drift: 0.00010, vol: 0.0010, risk: 1, live: false },
+  { id: "itau-gestionado-moderado-f3", name: "Gestionado Moderado", manager: "Itaú", serie: "F3", seed: 51, drift: 0.00022, vol: 0.0040, risk: 3, live: false },
+  { id: "itau-gestionado-moderado-f1", name: "Gestionado Moderado", manager: "Itaú", serie: "F1", seed: 52, drift: 0.00022, vol: 0.0040, risk: 3, live: false },
+  { id: "itau-gestionado-conservador-f1", name: "Gestionado Conservador", manager: "Itaú", serie: "F1", seed: 53, drift: 0.00014, vol: 0.0018, risk: 2, live: false },
+  { id: "itau-gestionado-agresivo-f2", name: "Gestionado Agresivo", manager: "Itaú", serie: "F2", seed: 54, drift: 0.00033, vol: 0.0068, risk: 5, live: false },
+  { id: "itau-gestionado-conservador-f2", name: "Gestionado Conservador", manager: "Itaú", serie: "F2", seed: 55, drift: 0.00014, vol: 0.0018, risk: 2, live: false },
+  { id: "bfg-fixed-income-global-a", name: "Fixed Income Global Opportunities Fund", manager: "BFG", serie: "A", seed: 89, drift: 0.00016, vol: 0.0025, risk: 2, live: false },
+  { id: "bfg-fixed-income-global-c", name: "Fixed Income Global Opportunities Fund", manager: "BFG", serie: "C", seed: 90, drift: 0.00016, vol: 0.0025, risk: 2, live: false },
 ];
 
 const CATEGORY_LABELS = {
