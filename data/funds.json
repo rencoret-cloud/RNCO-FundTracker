@@ -77,7 +77,7 @@
       "symbol": "FFMM-ITAU-8927-A"
     }
   },
-  "__generatedAt": "2026-06-28T10:13:26.186Z",
+  "__generatedAt": "2026-06-29T14:40:39.043Z",
   "lv-agresiva": {
     "series": [
       {
@@ -3757,7 +3757,7 @@
         "value": 11.65
       }
     ],
-    "lastUpdated": "2026-06-28T10:13:26.413Z",
+    "lastUpdated": "2026-06-29T14:40:39.307Z",
     "source": "fintual/cmf",
     "symbol": "FFMM-LARRAINVIAL-10002-A"
   },
@@ -7444,7 +7444,7 @@
         "value": 11.9073
       }
     ],
-    "lastUpdated": "2026-06-28T10:13:26.435Z",
+    "lastUpdated": "2026-06-29T14:40:39.338Z",
     "source": "fintual/cmf",
     "symbol": "FFMM-LARRAINVIAL-9816-A"
   },
@@ -11131,7 +11131,7 @@
         "value": 12.8596
       }
     ],
-    "lastUpdated": "2026-06-28T10:13:26.461Z",
+    "lastUpdated": "2026-06-29T14:40:39.373Z",
     "source": "fintual/cmf",
     "symbol": "FFMM-LARRAINVIAL-9853-A"
   },
@@ -14818,7 +14818,7 @@
         "value": 2539.9929
       }
     ],
-    "lastUpdated": "2026-06-28T10:13:26.492Z",
+    "lastUpdated": "2026-06-29T14:40:39.413Z",
     "source": "fintual/cmf",
     "symbol": "FFMM-LARRAINVIAL-8263-A"
   },
@@ -18501,13 +18501,13 @@
         "value": 2281.1572
       }
     ],
-    "lastUpdated": "2026-06-28T10:13:26.516Z",
+    "lastUpdated": "2026-06-29T14:40:39.456Z",
     "source": "fintual/cmf",
     "symbol": "FFMM-ITAU-8959-A"
   },
   "itau-gestionado-agresivo-f1": {
     "series": [],
-    "lastUpdated": "2026-06-28T10:13:26.536Z",
+    "lastUpdated": "2026-06-29T14:40:39.489Z",
     "source": "fintual/cmf",
     "symbol": "FFMM-ITAU-8925-A"
   },
@@ -22190,7 +22190,7 @@
         "value": 2006.0533
       }
     ],
-    "lastUpdated": "2026-06-28T10:13:26.557Z",
+    "lastUpdated": "2026-06-29T14:40:39.522Z",
     "source": "fintual/cmf",
     "symbol": "FFMM-BANCHILE-8023-L"
   },
@@ -25877,7 +25877,7 @@
         "value": 1720.5903
       }
     ],
-    "lastUpdated": "2026-06-28T10:13:26.582Z",
+    "lastUpdated": "2026-06-29T14:40:39.566Z",
     "source": "fintual/cmf",
     "symbol": "FFMM-SANTANDER-8908-GLOBAL"
   },
@@ -29564,7 +29564,7 @@
         "value": 3431.5665
       }
     ],
-    "lastUpdated": "2026-06-28T10:13:26.611Z",
+    "lastUpdated": "2026-06-29T14:40:39.603Z",
     "source": "fintual/cmf",
     "symbol": "FFMM-SANTANDER-8090-EJECU"
   },
@@ -33247,7 +33247,7 @@
         "value": 2990.502
       }
     ],
-    "lastUpdated": "2026-06-28T10:13:26.637Z",
+    "lastUpdated": "2026-06-29T14:40:39.645Z",
     "source": "fintual/cmf",
     "symbol": "FFMM-SANTANDER-8090-INVER"
   },
@@ -36934,7 +36934,7 @@
         "value": 1397.2845
       }
     ],
-    "lastUpdated": "2026-06-28T10:13:26.660Z",
+    "lastUpdated": "2026-06-29T14:40:39.678Z",
     "source": "fintual/cmf",
     "symbol": "FFMM-SANTANDER-8082-G"
   },
@@ -40621,7 +40621,7 @@
         "value": 1981.749
       }
     ],
-    "lastUpdated": "2026-06-28T10:13:26.681Z",
+    "lastUpdated": "2026-06-29T14:40:39.716Z",
     "source": "fintual/cmf",
     "symbol": "FFMM-LARRAINVIAL-9193-Q"
   },
@@ -44308,7 +44308,7 @@
         "value": 1453.909
       }
     ],
-    "lastUpdated": "2026-06-28T10:13:26.743Z",
+    "lastUpdated": "2026-06-29T14:40:39.746Z",
     "source": "fintual/cmf",
     "symbol": "FFMM-LARRAINVIAL-9192-Q"
   },
@@ -47995,37 +47995,37 @@
         "value": 2084.9596
       }
     ],
-    "lastUpdated": "2026-06-28T10:13:26.770Z",
+    "lastUpdated": "2026-06-29T14:40:39.780Z",
     "source": "fintual/cmf",
     "symbol": "FFMM-LARRAINVIAL-8263-F"
   },
   "itau-gestionado-moderado-f3": {
     "series": [],
-    "lastUpdated": "2026-06-28T10:13:26.790Z",
+    "lastUpdated": "2026-06-29T14:40:39.809Z",
     "source": "fintual/cmf",
     "symbol": "FFMM-ITAU-8928-A"
   },
   "itau-gestionado-moderado-f1": {
     "series": [],
-    "lastUpdated": "2026-06-28T10:13:26.807Z",
+    "lastUpdated": "2026-06-29T14:40:39.835Z",
     "source": "fintual/cmf",
     "symbol": "FFMM-ITAU-8928-A"
   },
   "itau-gestionado-conservador-f1": {
     "series": [],
-    "lastUpdated": "2026-06-28T10:13:26.825Z",
+    "lastUpdated": "2026-06-29T14:40:39.865Z",
     "source": "fintual/cmf",
     "symbol": "FFMM-ITAU-8927-A"
   },
   "itau-gestionado-agresivo-f2": {
     "series": [],
-    "lastUpdated": "2026-06-28T10:13:26.842Z",
+    "lastUpdated": "2026-06-29T14:40:39.889Z",
     "source": "fintual/cmf",
     "symbol": "FFMM-ITAU-8925-A"
   },
   "itau-gestionado-conservador-f2": {
     "series": [],
-    "lastUpdated": "2026-06-28T10:13:26.862Z",
+    "lastUpdated": "2026-06-29T14:40:39.920Z",
     "source": "fintual/cmf",
     "symbol": "FFMM-ITAU-8927-A"
   }
